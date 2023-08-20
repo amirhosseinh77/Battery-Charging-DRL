@@ -100,6 +100,7 @@ class LIBPackEnv(gymnasium.Env):
 
 
   def reset(self, seed=None, options={}):
+    if seed is not None: np.random.seed(seed)
     self.step_counter = 0
     self.prev_action = np.zeros(self.number_of_cells+1)
     # Reset the state of the environment to an initial state
