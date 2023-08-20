@@ -35,7 +35,7 @@ class LIBPackEnv(gymnasium.Env):
     self.min_voltage = self.pack.updateModel(0, self.T).mean()
     
     # Define overcharge and overdischarge voltage limits
-    self.overcharge_voltage = 4.25 # V
+    self.overcharge_voltage = 4.1 # V
     self.overdischarge_voltage = 2.3 # V
     self.overTemp = 40/self.T
     self.underTemp = 10/self.T
@@ -80,7 +80,7 @@ class LIBPackEnv(gymnasium.Env):
     
     # Check if the episode is done
     # if np.any(next_state[self.soc_idx] >= self.target_soc): || (next_state[self.soc_idx].mean() >= self.target_soc)
-    if  np.any(next_state[self.soc_idx] >= self.target_soc): 
+    if  np.any(next_state[self.soc_idx] - self.target_soc >= -5e-3): 
       done = True
     elif self.step_counter > self.MAX_STEP: # try other things
       done = True
