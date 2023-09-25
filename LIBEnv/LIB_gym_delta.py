@@ -5,7 +5,7 @@ from LIBEnv.packFullModel import LithiumIonPack
 from LIBEnv.plots import plot_pack_SOC
 
 class LIBPackEnv(gymnasium.Env):
-  def __init__(self, model='models/PANmodel.mat', number_of_cells=1, T=25, dt=1, current_ratio=-100):
+  def __init__(self, model='models/PANmodel.mat', number_of_cells=1, T=25, dt=1, current_ratio=-100, use_priority=True):
     super(LIBPackEnv, self).__init__()
     self.model = model
     self.number_of_cells = number_of_cells
@@ -19,6 +19,7 @@ class LIBPackEnv(gymnasium.Env):
     self.step_counter = 0
     self.current_ratio = current_ratio
     self.coolant_ratio = T
+    self.use_priority = use_priority
     # Define action and observation space
     self.action_space = spaces.Box(low=0, high=np.hstack([np.ones(self.number_of_cells),[2]]), shape=(number_of_cells+1,), dtype=np.float32)
     self.observation_space = spaces.Box(low=np.stack([-0.05]*self.number_of_cells+[0]*self.number_of_cells+[0]*self.number_of_cells), 
@@ -62,19 +63,23 @@ class LIBPackEnv(gymnasium.Env):
     C_volt = np.clip(pack_voltage-self.overcharge_voltage, 0, np.inf).sum() + np.clip(self.overdischarge_voltage-pack_voltage, 0, np.inf).sum()
     C_smooth = np.abs(action-self.prev_action).sum()
 
-    # priority-objective reward function
+    # balancing threshold
     balance_thresh = 0.02
-    T = -np.log(0.5)/balance_thresh
-    # w1 = -0.9*np.exp(-T*(soc_dev))+0.95
-    # w2 =  0.9*np.exp(-T*(soc_dev))+0.05
-    w1 = -0.8*np.exp(-T*(soc_dev))+0.9
-    w2 =  0.8*np.exp(-T*(soc_dev))+0.1
+
+    # priority-objective reward function
+    if self.use_priority:
+      T = -np.log(0.5)/balance_thresh
+      # w1 = -0.9*np.exp(-T*(soc_dev))+0.95
+      # w2 =  0.9*np.exp(-T*(soc_dev))+0.05
+      w1 = -0.8*np.exp(-T*(soc_dev))+0.9
+      w2 =  0.8*np.exp(-T*(soc_dev))+0.1
+    else:
+      w1,w2 = 1,1
 
     w_reg_balance = 0.7/np.sum(np.abs(balance_thresh*np.linspace(0,1,self.number_of_cells) - np.mean(balance_thresh*np.linspace(0,1,self.number_of_cells))))/2
     w_reg_heat = 0.7/(0.01*self.number_of_cells)
     w_reg_volt = 0.7/(0.01*self.number_of_cells)
-    w_reg_volt = 0.7/(0.01*self.number_of_cells)
-    cost =  w_reg_balance*w1*C_balance + w2*C_soc + w_reg_heat*C_heat + w_reg_volt*C_volt + 0.1*C_smooth
+    cost =  w_reg_balance*w1*C_balance + w2*C_soc + w_reg_heat*C_heat + w_reg_volt*C_volt # + 0.1*C_smooth
     
     reward = -cost
     
