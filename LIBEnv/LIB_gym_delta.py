@@ -85,7 +85,7 @@ class LIBPackEnv(gymnasium.Env):
     
     # Check if the episode is done
     # if np.any(next_state[self.soc_idx] >= self.target_soc): || (next_state[self.soc_idx].mean() >= self.target_soc)
-    if  np.any(next_state[self.soc_idx] - self.target_soc >= -5e-3): 
+    if  np.any(self.target_soc - next_state[self.soc_idx] <= 5e-3): 
       done = True
     elif self.step_counter > self.MAX_STEP: # try other things
       done = True
