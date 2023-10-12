@@ -15,7 +15,7 @@ class LIBPackEnv(gymnasium.Env):
     self.voltage_idx = 1
     self.temp_idx = 2
     self.prev_action = np.zeros(number_of_cells+1)
-    self.MAX_STEP = 3e3
+    self.MAX_STEP = 2e3
     self.step_counter = 0
     self.current_ratio = current_ratio
     self.coolant_ratio = T
