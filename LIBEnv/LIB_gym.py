@@ -15,7 +15,7 @@ class LIBPackEnv(gymnasium.Env):
     self.voltage_idx = 1
     self.temp_idx = 2
     self.prev_action = np.zeros(number_of_cells+1)
-    self.MAX_STEP = 2e3
+    self.MAX_STEP = 3e3
     self.step_counter = 0
     self.current_ratio = current_ratio
     self.coolant_ratio = T
@@ -74,10 +74,10 @@ class LIBPackEnv(gymnasium.Env):
     # priority-objective reward function
     if self.use_priority:
       T = -np.log(0.5)/balance_thresh
-      # w1 = -0.9*np.exp(-T*(soc_dev))+0.95
-      # w2 =  0.9*np.exp(-T*(soc_dev))+0.05
-      w1 = -0.8*np.exp(-T*(soc_dev))+0.9
-      w2 =  0.8*np.exp(-T*(soc_dev))+0.1
+      w1 = -0.9*np.exp(-T*(soc_dev))+0.95
+      w2 =  0.9*np.exp(-T*(soc_dev))+0.05
+      # w1 = -0.8*np.exp(-T*(soc_dev))+0.9
+      # w2 =  0.8*np.exp(-T*(soc_dev))+0.1
     else:
       w1,w2 = 1,1
 
