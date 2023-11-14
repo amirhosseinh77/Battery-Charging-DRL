@@ -18,14 +18,14 @@ class LIBPackEnv(gymnasium.Env):
     self.MAX_STEP = 3e3
     self.step_counter = 0
     self.current_ratio = current_ratio
-    self.coolant_ratio = T
+    self.coolant_ratio = 2*T
     self.use_priority = use_priority
     self.use_switch = use_switch
     # Define action and observation space
     if self.use_switch:
       self.action_space = spaces.MultiDiscrete([2]*self.number_of_cells+[3])
     else:
-      self.action_space = spaces.Box(low=0, high=np.hstack([np.ones(self.number_of_cells),[2]]), shape=(number_of_cells+1,), dtype=np.float32)
+      self.action_space = spaces.Box(low=0, high=np.ones(self.number_of_cells+1), shape=(number_of_cells+1,), dtype=np.float32)
       
     self.observation_space = spaces.Box(low=np.stack([-0.05]*self.number_of_cells+[0]*self.number_of_cells+[0]*self.number_of_cells), 
                                         high=np.stack([1.05]*self.number_of_cells+[2]*self.number_of_cells+[4]*self.number_of_cells), 
@@ -41,7 +41,7 @@ class LIBPackEnv(gymnasium.Env):
     self.min_voltage = self.pack.updateModel(0, self.T).mean()
     
     # Define overcharge and overdischarge voltage limits
-    self.overcharge_voltage = 4.1 # V
+    self.overcharge_voltage = 4.2 # V
     self.overdischarge_voltage = 2.3 # V
     self.overTemp = 40/self.T
     self.underTemp = 10/self.T
@@ -69,22 +69,22 @@ class LIBPackEnv(gymnasium.Env):
     C_smooth = np.abs(action-self.prev_action).sum()
 
     # balancing threshold
-    balance_thresh = 0.02
+    balance_thresh = 0.05
 
     # priority-objective reward function
     if self.use_priority:
       T = -np.log(0.5)/balance_thresh
-      w1 = -0.9*np.exp(-T*(soc_dev))+0.95
-      w2 =  0.9*np.exp(-T*(soc_dev))+0.05
-      # w1 = -0.8*np.exp(-T*(soc_dev))+0.9
-      # w2 =  0.8*np.exp(-T*(soc_dev))+0.1
+      # w1 = -0.9*np.exp(-T*(soc_dev))+0.95
+      # w2 =  0.9*np.exp(-T*(soc_dev))+0.05
+      w1 = -0.8*np.exp(-T*(soc_dev))+0.9
+      w2 =  0.8*np.exp(-T*(soc_dev))+0.1
     else:
       w1,w2 = 1,1
 
     w_reg_balance = 0.7/np.sum(np.abs(balance_thresh*np.linspace(0,1,self.number_of_cells) - np.mean(balance_thresh*np.linspace(0,1,self.number_of_cells))))/2
     w_reg_heat = 0.7/(0.01*self.number_of_cells)
     w_reg_volt = 0.7/(0.01*self.number_of_cells)
-    cost =  w_reg_balance*w1*C_balance + w2*C_soc + w_reg_heat*C_heat + w_reg_volt*C_volt # + 0.1*C_smooth
+    cost =  w_reg_balance*w1*C_balance + w2*C_soc + w_reg_heat*C_heat + w_reg_volt*C_volt #+ 0.1*C_smooth
     
     reward = -cost
     
