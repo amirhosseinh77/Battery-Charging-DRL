@@ -69,7 +69,7 @@ class LIBPackEnv(gymnasium.Env):
     C_smooth = np.abs(action-self.prev_action).sum()
 
     # balancing threshold
-    balance_thresh = 0.05
+    balance_thresh = 0.02
 
     # priority-objective reward function
     if self.use_priority:
@@ -84,7 +84,7 @@ class LIBPackEnv(gymnasium.Env):
     w_reg_balance = 0.7/np.sum(np.abs(balance_thresh*np.linspace(0,1,self.number_of_cells) - np.mean(balance_thresh*np.linspace(0,1,self.number_of_cells))))/2
     w_reg_heat = 0.7/(0.01*self.number_of_cells)
     w_reg_volt = 0.7/(0.01*self.number_of_cells)
-    cost =  w_reg_balance*w1*C_balance + w2*C_soc + w_reg_heat*C_heat + w_reg_volt*C_volt #+ 0.1*C_smooth
+    cost =  w_reg_balance*w1*C_balance + np.exp(self.step_counter/1000)*w2*C_soc + w_reg_heat*C_heat + w_reg_volt*C_volt #+ 0.1*C_smooth
     
     reward = -cost
     
