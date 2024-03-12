@@ -9,8 +9,8 @@ tmp/
 
 # model weights
 *.pth
-*.zip
-*.csv
+%*.zip
+%*.csv
 
 # C extensions
 *.so
