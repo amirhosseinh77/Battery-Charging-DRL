@@ -1,1 +1,1 @@
-# Battery-RL
+# Lithium-ion Battery Charging Optimization
