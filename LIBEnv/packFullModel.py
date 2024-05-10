@@ -19,7 +19,7 @@ class LithiumIonPack:
         Q = current*(self.ECM.OCVfromSOC(self.ECM.z_k)-voltage)
         self.ThM.updateTemp(Q, Tf)
         # update electrical parameters
-        # self.ECM.update_params(self.ThM.Tc)
+        self.ECM.update_params(self.ThM.Tc)
         return voltage
 
 
@@ -99,6 +99,15 @@ class ElectricalModel:
         self.h_k = h_k1
         self.z_k = z_k1
 
+    def keep_params(self):
+        self.etaParam_init = self.etaParam
+        self.QParam_init   = self.QParam  
+        self.GParam_init   = self.GParam  
+        self.M0Param_init  = self.M0Param 
+        self.MParam_init   = self.MParam  
+        self.R0Param_init  = self.R0Param 
+        self.RCParam_init  = self.RCParam  
+        self.RParam_init   = self.RParam  
 
     def set_params(self, temp):
         self.etaParam = self.etaFunction(temp)
@@ -109,28 +118,40 @@ class ElectricalModel:
         self.R0Param  = self.R0Function(temp) 
         self.RCParam  = self.RCFunction(temp).reshape(-1) 
         self.RParam   =  self.RFunction(temp) 
-
-    def update_params(self, temp):
-        self.etaParam = self.etaFunction(temp) + (self.etaParam - self.etaFunction(self.T))
-        self.QParam   =  self.QFunction(temp)  + (self.QParam - self.QFunction(self.T))
-        self.GParam   =  self.GFunction(temp)  + (self.GParam - self.GFunction(self.T))
-        self.M0Param  = self.M0Function(temp)  + (self.M0Param - self.M0Function(self.T))
-        self.MParam   =  self.MFunction(temp)  + (self.MParam - self.MFunction(self.T))
-        self.R0Param  = self.R0Function(temp)  + (self.R0Param - self.R0Function(self.T))
-        self.RCParam  = self.RCFunction(temp)  + (self.RCParam - self.RCFunction(self.T))
-        self.RParam   =  self.RFunction(temp)  + (self.RParam - self.RFunction(self.T))
-        self.OCVfromSOC = make_OCVfromSOCtemp(self.model_data, np.mean(temp))
-        self.SOCfromOCV = make_SOCfromOCVtemp(self.model_data, np.mean(temp))
-
+        self.keep_params()
+ 
     def change_params(self, ratio):
         self.etaParam = np.random.normal(loc=self.etaParam, scale=self.etaParam/ratio, size=(1,self.number_of_cells))
-        self.QParam = np.random.normal(loc=self.QParam, scale=self.QParam/ratio, size=(1,self.number_of_cells))
-        self.GParam = np.random.normal(loc=self.GParam, scale=self.GParam/ratio, size=(1,self.number_of_cells))
-        self.M0Param = np.random.normal(loc=self.M0Param, scale=self.M0Param/ratio, size=(1,self.number_of_cells))
-        self.MParam = np.random.normal(loc=self.MParam, scale=self.MParam/ratio, size=(1,self.number_of_cells))
-        self.R0Param = np.random.normal(loc=self.R0Param, scale=self.R0Param/ratio, size=(1,self.number_of_cells))
-        self.RCParam = np.random.normal(loc=self.RCParam, scale=self.RCParam/ratio, size=(1,self.number_of_cells))
-        self.RParam = np.random.normal(loc=self.RParam, scale=self.RParam/ratio, size=(1,self.number_of_cells))
+        self.QParam   = np.random.normal(loc=self.QParam, scale=self.QParam/ratio, size=(1,self.number_of_cells))
+        self.GParam   = np.random.normal(loc=self.GParam, scale=self.GParam/ratio, size=(1,self.number_of_cells))
+        self.M0Param  = np.random.normal(loc=self.M0Param, scale=self.M0Param/ratio, size=(1,self.number_of_cells))
+        self.MParam   = np.random.normal(loc=self.MParam, scale=self.MParam/ratio, size=(1,self.number_of_cells))
+        self.R0Param  = np.random.normal(loc=self.R0Param, scale=self.R0Param/ratio, size=(1,self.number_of_cells))
+        self.RCParam  = np.random.normal(loc=self.RCParam, scale=self.RCParam/ratio, size=(1,self.number_of_cells))
+        self.RParam   = np.random.normal(loc=self.RParam, scale=self.RParam/ratio, size=(1,self.number_of_cells))
+        self.keep_params()
+
+    def update_params(self, temp):
+        self.etaParam = self.etaFunction(temp) + (self.etaParam_init - self.etaFunction(self.T))
+        self.QParam   = self.QFunction(temp)   + (self.QParam_init - self.QFunction(self.T))
+        self.GParam   = self.GFunction(temp)   + (self.GParam_init - self.GFunction(self.T))
+        self.M0Param  = self.M0Function(temp)  + (self.M0Param_init - self.M0Function(self.T))
+        self.MParam   = self.MFunction(temp)   + (self.MParam_init - self.MFunction(self.T))
+        self.R0Param  = self.R0Function(temp)  + (self.R0Param_init - self.R0Function(self.T))
+        self.RCParam  = self.RCFunction(temp)  + (self.RCParam_init - self.RCFunction(self.T))
+        self.RParam   = self.RFunction(temp)   + (self.RParam_init - self.RFunction(self.T))
+        self.OCVfromSOC = make_OCVfromSOCtemp(self.model_data, np.mean(temp))
+        self.SOCfromOCV = make_SOCfromOCVtemp(self.model_data, np.mean(temp))
+    
+    def show_params(self):
+        print(f'eta   : {self.etaParam}\n')
+        print(f'Q     : {self.QParam}\n')
+        print(f'gamma : {self.GParam}\n')
+        print(f'M0    : {self.M0Param}\n')
+        print(f'M     : {self.MParam}\n')
+        print(f'R0    : {self.R0Param}\n')
+        print(f'RC    : {self.RCParam}\n')
+        print(f'R     : {self.RParam}')
 
 
 def make_OCVfromSOCtemp(model_data, T):
@@ -186,3 +207,10 @@ class LumpedModel:
         self.Rc = np.random.normal(loc=self.Rc, scale=self.Rc/ratio, size=(1,self.number_of_cells))
         self.Ru = np.random.normal(loc=self.Ru, scale=self.Ru/ratio, size=(1,self.number_of_cells))
         self.Cs = np.random.normal(loc=self.Cs, scale=self.Cs/ratio, size=(1,self.number_of_cells))
+        # self.Cc = np.random.normal(loc=self.Cc, scale=self.Cc/ratio, size=(1,self.number_of_cells))
+
+    def show_params(self):
+        print(f'Rc : {self.Rc}\n')
+        print(f'Ru : {self.Ru}\n')
+        print(f'Cs : {self.Cs}\n')
+        print(f'Cc : {self.Cc}')
